@@ -18,17 +18,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '24.x'
           cache: 'pnpm'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
 
       - name: pnpm install, build, and test
         run: |
@@ -69,4 +68,5 @@ jobs:
           app-name: 'my-website'
           slot-name: 'Production'
           package: .
+
 
