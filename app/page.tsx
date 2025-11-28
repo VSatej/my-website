@@ -7,7 +7,7 @@ export default function Page() {
         My Portfolio
       </h1>
       <p className="mb-4">
-        {`Hi, I'm a software developer specializing in building exceptional digital experiences. Here are some of my recent blog posts:`}
+        {`Ola, I'm a software developer specializing in building exceptional digital experiences. Here are some of my recent blog posts:`}
       </p>
       <div className="my-8">
         <BlogPosts />
