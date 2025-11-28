@@ -25,7 +25,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install pnpm
-        run: npm install -g pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
       - name: pnpm install, build, and test
         run: |
@@ -66,3 +69,4 @@ jobs:
           app-name: 'my-website'
           slot-name: 'Production'
           package: .
+
