@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - my-website
 
 on:
@@ -9,6 +6,11 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  # minimal permissions for workflows that upload artifacts and use id-token
+  contents: read
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,29 +18,37 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: Install pnpm
+      - name: Install pnpm (build runner)
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - name: Set up Node.js
+      - name: Set up Node.js (build runner)
         uses: actions/setup-node@v3
         with:
           node-version: '24.x'
           cache: 'pnpm'
 
-      - name: pnpm install, build, and test
+      - name: Install dependencies (build)
         run: |
-          pnpm install
+          pnpm install --frozen-lockfile
+
+      - name: Build
+        run: |
           pnpm build
+
+      - name: Run tests (if any)
+        run: |
           pnpm test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
+          # Upload entire repository (build outputs included). If you prefer a smaller release folder, change this to the release folder path.
           path: .
 
   deploy:
@@ -53,6 +63,33 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
+          path: ./app
+
+      - name: Install pnpm (deploy runner)
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js (deploy runner)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '24.x'
+          cache: 'pnpm'
+
+      - name: Install production dependencies (deploy)
+        working-directory: ./app
+        run: |
+          # ensure we only install production deps and respect lockfile
+          pnpm install --frozen-lockfile --prod
+
+      - name: Ensure start script exists
+        working-directory: ./app
+        run: |
+          if ! jq -e '.scripts.start' package.json > /dev/null 2>&1; then
+            echo "Adding start script to package.json"
+            jq '.scripts.start = "next start"' package.json > package.tmp.json && mv package.tmp.json package.json
+          fi
+        shell: bash
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -67,6 +104,4 @@ jobs:
         with:
           app-name: 'my-website'
           slot-name: 'Production'
-          package: .
-
-
+          package: ./app
